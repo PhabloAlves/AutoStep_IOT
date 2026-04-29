@@ -1,0 +1,1 @@
+Run the AutoStep vehicle simulator. Execute `python simulator/sensor_sim.py` and show the output. If the file doesn't exist yet, remind the user that the simulator needs to be implemented first and show the expected file path and structure based on `.claude/rules/architecture.md`.

@@ -1,0 +1,15 @@
+{
+  "broker": {
+    "host": "localhost",
+    "port": 1883
+  },
+  "prisms": ["PRISMA_01", "PRISMA_02", "PRISMA_03", "PRISMA_04", "PRISMA_05"],
+  "stages": {
+    "waiting":   { "min": 10, "max": 30 },
+    "transit":   { "min": 3,  "max": 10 },
+    "lift_up":   { "min": 5,  "max": 15 },
+    "service":   { "min": 20, "max": 60 },
+    "lift_down": { "min": 3,  "max": 10 },
+    "outflow":   { "min": 5,  "max": 20 }
+  }
+}
