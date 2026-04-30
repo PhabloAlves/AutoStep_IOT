@@ -1,13 +1,17 @@
 services:
   mosquitto:
     image: eclipse-mosquitto:2
-    ports:
-      - "1883:1883"
-      - "9001:9001"
+    entrypoint: ["sh", "/mosquitto/config/entrypoint.sh"]
+    expose:
+      - "1883"
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/entrypoint.sh:/mosquitto/config/entrypoint.sh
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    environment:
+      - MQTT_USER=${MQTT_USER:-autostep}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
 
   backend:
     build:
@@ -22,6 +26,9 @@ services:
     environment:
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
+      - MQTT_USER=${MQTT_USER:-autostep}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - AUTOSTEP_SECRET_KEY=${AUTOSTEP_SECRET_KEY}
 
   frontend:
     build:
@@ -34,6 +41,8 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+    environment:
+      - VITE_BACKEND_URL=http://backend:8000
 
 volumes:
   mosquitto_data:

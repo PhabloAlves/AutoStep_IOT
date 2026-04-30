@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import time
 from datetime import datetime, timezone
@@ -45,7 +46,12 @@ def main():
     config = load_config()
     broker = config["broker"]
 
+    mqtt_user     = os.environ.get("MQTT_USER", "")
+    mqtt_password = os.environ.get("MQTT_PASSWORD", "")
+
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    if mqtt_user:
+        client.username_pw_set(mqtt_user, mqtt_password)
     client.connect(broker["host"], broker["port"])
     client.loop_start()
 

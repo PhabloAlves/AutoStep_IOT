@@ -10,6 +10,9 @@ from backend.models import ServiceOrder
 
 router = APIRouter()
 
+MAX_PDF_BYTES = 10 * 1024 * 1024  # 10 MB
+PDF_MAGIC = b"%PDF-"
+
 
 def _extract_os_data(pdf_bytes: bytes) -> dict:
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -28,7 +31,11 @@ def upload_os(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Apenas arquivos PDF são aceitos")
 
-    content = file.file.read()
+    content = file.file.read(MAX_PDF_BYTES + 1)
+    if len(content) > MAX_PDF_BYTES:
+        raise HTTPException(status_code=413, detail="Arquivo PDF excede o limite de 10 MB")
+    if not content.startswith(PDF_MAGIC):
+        raise HTTPException(status_code=400, detail="O arquivo não é um PDF válido")
     data = _extract_os_data(content)
 
     # TODO: mapear `data` para ServiceOrder após definir o layout do PDF

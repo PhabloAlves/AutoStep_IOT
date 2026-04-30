@@ -1,10 +1,12 @@
+import os
 from datetime import datetime, timedelta, timezone
+
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = "troque-em-producao"
+SECRET_KEY = os.environ["AUTOSTEP_SECRET_KEY"]
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
@@ -33,5 +35,5 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
         if not username:
             raise ValueError
         return username
-    except (JWTError, ValueError):
+    except (jwt.PyJWTError, ValueError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")

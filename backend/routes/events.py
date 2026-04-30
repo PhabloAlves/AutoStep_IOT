@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from backend.auth import get_current_user
 from backend.database import get_db
 from backend.models import Prism, Stage, StageEvent
 
@@ -20,7 +21,11 @@ class EventPayload(BaseModel):
 
 
 @router.post("/")
-def register_event(payload: EventPayload, db: Session = Depends(get_db)):
+def register_event(
+    payload: EventPayload,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user),
+):
     prism = db.query(Prism).filter(Prism.prism_code == payload.prism_code).first()
     if not prism:
         raise HTTPException(status_code=404, detail=f"Prisma '{payload.prism_code}' não encontrado")

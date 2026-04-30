@@ -8,8 +8,10 @@ import paho.mqtt.client as mqtt
 from backend.database import SessionLocal
 from backend.models import Prism, Stage, StageEvent
 
-MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
-MQTT_PORT = int(os.environ.get("MQTT_PORT", 1883))
+MQTT_HOST     = os.environ.get("MQTT_HOST", "localhost")
+MQTT_PORT     = int(os.environ.get("MQTT_PORT", 1883))
+MQTT_USER     = os.environ.get("MQTT_USER", "")
+MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "")
 
 
 def _process(payload: dict, event_type: str):
@@ -74,6 +76,8 @@ def _on_message(client, userdata, message):
 
 def start_mqtt_subscriber():
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    if MQTT_USER:
+        client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
     client.on_message = _on_message
     try:
         client.connect(MQTT_HOST, MQTT_PORT)
