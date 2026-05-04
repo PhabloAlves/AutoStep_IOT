@@ -4,7 +4,10 @@ import { mockHistory, STAGE_LABELS } from '../mock/data'
 
 function fmtTime(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${date} ${time}`
 }
 
 function fmtDuration(sec) {
@@ -24,7 +27,8 @@ const STAGE_COLORS = {
 }
 
 export default function History() {
-  const [period, setPeriod] = useState('today')
+  const today = new Date().toISOString().slice(0, 10)
+  const [period, setPeriod] = useState({ start: today, end: today })
 
   return (
     <div className="space-y-6">

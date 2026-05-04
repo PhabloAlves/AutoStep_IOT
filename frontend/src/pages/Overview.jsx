@@ -24,8 +24,12 @@ const chartData = mockDailyMetrics.map(m => ({
   minutos: Math.round(m.avg_duration_sec / 60),
 }))
 
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function Overview() {
-  const [period, setPeriod] = useState('today')
+  const [period, setPeriod] = useState({ start: today(), end: today() })
 
   const totalVehicles = 8
   const avgWait = mockDailyMetrics.find(m => m.stage === 'waiting')?.avg_duration_sec ?? 0

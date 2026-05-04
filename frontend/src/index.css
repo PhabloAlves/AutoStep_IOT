@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+svg:focus:not(:focus-visible),
+svg *:focus:not(:focus-visible) {
+  outline: none;
+}
