@@ -31,7 +31,7 @@ function today() {
 export default function Overview() {
   const [period, setPeriod] = useState({ start: today(), end: today() })
 
-  const totalVehicles = 8
+  const totalVehicles = 1
   const avgWait = mockDailyMetrics.find(m => m.stage === 'waiting')?.avg_duration_sec ?? 0
   const avgService = mockDailyMetrics.find(m => m.stage === 'service')?.avg_duration_sec ?? 0
 
