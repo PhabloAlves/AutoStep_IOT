@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(gh auth *)",
-      "PowerShell(gh *)"
+      "PowerShell(gh *)",
+      "Bash(git push *)"
     ]
   }
 }
