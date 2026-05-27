@@ -92,6 +92,10 @@ export const api = {
     return apiFetch(`/events?${qs}`)
   },
 
+  registerEvent(payload) {
+    return apiFetch('/events/', { method: 'POST', body: JSON.stringify(payload) })
+  },
+
   // ── Ordens de Serviço ─────────────────────────────────────────────────────
   listOrders() {
     return apiFetch('/os/')

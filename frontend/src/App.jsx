@@ -6,6 +6,7 @@ import Bottlenecks from './pages/Bottlenecks'
 import History from './pages/History'
 import ServiceOrders from './pages/ServiceOrders'
 import Login from './pages/Login'
+import Simular from './pages/Simular'
 import './index.css'
 
 function AuthGuard({ children }) {
@@ -30,6 +31,7 @@ export default function App() {
                   <Route path="/gargalos"  element={<Bottlenecks />}   />
                   <Route path="/historico" element={<History />}       />
                   <Route path="/ordens"    element={<ServiceOrders />} />
+                  <Route path="/simular"   element={<Simular />}       />
                 </Routes>
               </Layout>
             </AuthGuard>
