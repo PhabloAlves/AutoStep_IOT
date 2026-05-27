@@ -21,8 +21,14 @@ export default function Login() {
       } else {
         setError('Credenciais inválidas')
       }
-    } catch {
-      setError('Credenciais inválidas')
+    } catch (err) {
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        setError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.')
+      } else if (err.message?.includes('429')) {
+        setError('Muitas tentativas. Aguarde 1 minuto e tente novamente.')
+      } else {
+        setError(`Credenciais inválidas (${err.message})`)
+      }
     } finally {
       setLoading(false)
     }

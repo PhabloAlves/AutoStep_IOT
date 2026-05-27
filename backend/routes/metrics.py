@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from backend.auth import get_current_user
@@ -166,7 +166,7 @@ def service_type_stats(
             StageEvent.prism_id,
             func.sum(StageEvent.duration_sec).label("total_sec"),
             func.sum(
-                func.case((StageEvent.stage == Stage.SERVICE, StageEvent.duration_sec), else_=0)
+                case((StageEvent.stage == Stage.SERVICE, StageEvent.duration_sec), else_=0)
             ).label("service_sec"),
         )
         .join(Prism, Prism.id == StageEvent.prism_id)
