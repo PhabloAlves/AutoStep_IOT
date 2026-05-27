@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../api'
 
 const STAGES = [
@@ -28,13 +28,30 @@ function StatusBadge({ text, color }) {
 }
 
 export default function Simular() {
-  const [prism,      setPrism]      = useState('PRISMA_01')
-  const [elevator,   setElevator]   = useState(1)
-  const [stageIdx,   setStageIdx]   = useState(0)      // etapa atual
-  const [inside,     setInside]     = useState(false)  // true = entrou, aguardando saída
-  const [loading,    setLoading]    = useState(false)
-  const [log,        setLog]        = useState([])
-  const [done,       setDone]       = useState(false)
+  const [prism,         setPrism]         = useState('PRISMA_01')
+  const [elevator,      setElevator]      = useState(1)
+  const [stageIdx,      setStageIdx]      = useState(0)
+  const [inside,        setInside]        = useState(false)
+  const [loading,       setLoading]       = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [log,           setLog]           = useState([])
+  const [done,          setDone]          = useState(false)
+  const [reloadKey,     setReloadKey]     = useState(0)
+
+  // Ao trocar o prisma (ou forçar reload), buscar em qual etapa ele está
+  useEffect(() => {
+    setStatusLoading(true)
+    api.prismStatus(prism).then(status => {
+      const idx = STAGES.findIndex(s => s.key === status.current_stage)
+      const resolvedIdx = idx >= 0 ? idx : 0
+      setStageIdx(resolvedIdx)
+      setInside(status.inside ?? false)
+      setDone(false)
+    }).catch(() => {
+      setStageIdx(0)
+      setInside(false)
+    }).finally(() => setStatusLoading(false))
+  }, [prism, reloadKey])
 
   const stage = STAGES[stageIdx]
 
@@ -77,10 +94,8 @@ export default function Simular() {
   }
 
   function reset() {
-    setStageIdx(0)
-    setInside(false)
-    setDone(false)
     setLog([])
+    setReloadKey(k => k + 1)  // força re-fetch do status do prisma
   }
 
   return (
@@ -102,43 +117,44 @@ export default function Simular() {
       <div className="flex-1 px-4 py-6 space-y-6 max-w-sm mx-auto w-full">
 
         {/* Seleção de prisma e elevador */}
-        {!inside && stageIdx === 0 && !done && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-widest text-white/50">
-                Prisma (carro)
-              </label>
-              <select
-                value={prism}
-                onChange={e => setPrism(e.target.value)}
-                className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {PRISMS.map(p => <option key={p} value={p} className="text-black">{p}</option>)}
-              </select>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-widest text-white/50">
+              Prisma (carro)
+            </label>
+            <select
+              value={prism}
+              onChange={e => { setLog([]); setPrism(e.target.value) }}
+              className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {PRISMS.map(p => <option key={p} value={p} className="text-black">{p}</option>)}
+            </select>
+            {statusLoading && (
+              <p className="text-xs text-white/40">Verificando etapa atual…</p>
+            )}
+          </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-widest text-white/50">
-                Elevador destino
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {ELEVATORS.map(e => (
-                  <button
-                    key={e}
-                    onClick={() => setElevator(e)}
-                    className={`rounded-xl py-3 text-base font-bold border transition-colors ${
-                      elevator === e
-                        ? 'bg-indigo-600 border-indigo-500 text-white'
-                        : 'bg-white/10 border-white/20 text-white/70'
-                    }`}
-                  >
-                    Elevador {e}
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-widest text-white/50">
+              Elevador destino
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {ELEVATORS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => setElevator(e)}
+                  className={`rounded-xl py-3 text-base font-bold border transition-colors ${
+                    elevator === e
+                      ? 'bg-indigo-600 border-indigo-500 text-white'
+                      : 'bg-white/10 border-white/20 text-white/70'
+                  }`}
+                >
+                  Elevador {e}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
         {/* Progress das etapas */}
         <div className="space-y-2">

@@ -19,7 +19,8 @@ def _process(payload: dict, event_type: str):
     try:
         prism_code  = payload["prism_code"]
         stage       = Stage(payload["stage"])
-        timestamp   = datetime.fromisoformat(payload["timestamp"].replace("Z", "+00:00"))
+        ts_raw      = datetime.fromisoformat(payload["timestamp"].replace("Z", "+00:00"))
+        timestamp   = ts_raw.replace(tzinfo=None)  # normalizar para naive UTC (consistente com SQLite)
         elevator_id = payload.get("elevator_id")
 
         prism = db.query(Prism).filter(Prism.prism_code == prism_code).first()

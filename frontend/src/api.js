@@ -116,4 +116,8 @@ export const api = {
   availablePrisms() {
     return apiFetch('/prisms/available')
   },
+
+  prismStatus(prismCode) {
+    return apiFetch(`/prisms/${prismCode}/status`)
+  },
 }

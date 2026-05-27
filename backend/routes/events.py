@@ -1,6 +1,11 @@
 from datetime import date, datetime
 from typing import Optional
 
+
+def _naive(dt: datetime) -> datetime:
+    """Remove timezone info para armazenamento consistente no SQLite (tudo em UTC)."""
+    return dt.replace(tzinfo=None) if dt and dt.tzinfo else dt
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -66,12 +71,14 @@ def register_event(
     if not prism:
         raise HTTPException(status_code=404, detail=f"Prisma '{payload.prism_code}' não encontrado")
 
+    ts = _naive(payload.timestamp)
+
     if payload.event_type == "enter":
         db.add(StageEvent(
             prism_id=prism.id,
             elevator_id=payload.elevator_id,
             stage=payload.stage,
-            entered_at=payload.timestamp,
+            entered_at=ts,
         ))
         db.commit()
         return {"message": "Entrada registrada"}
@@ -89,8 +96,8 @@ def register_event(
         )
         if not event:
             raise HTTPException(status_code=404, detail="Entrada aberta não encontrada para esta etapa")
-        event.exited_at    = payload.timestamp
-        event.duration_sec = int((payload.timestamp - event.entered_at).total_seconds())
+        event.exited_at    = ts
+        event.duration_sec = int((ts - event.entered_at).total_seconds())
         if payload.stage == Stage.OUTFLOW:
             prism.is_active = False
         db.commit()
