@@ -1,22 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Link2, Clock, CheckCircle2 } from 'lucide-react'
-import { mockActivePrisms } from '../mock/data'
-
-function elapsed(iso) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  const h = Math.floor(diff / 3600)
-  const m = Math.floor((diff % 3600) / 60)
-  if (h > 0) return `${h}h ${m}min esperando`
-  return `${m} min esperando`
-}
+import { api } from '../api'
 
 export default function LinkPrismModal({ os, onClose, onConfirm }) {
+  const [prisms, setPrisms]   = useState([])
   const [selected, setSelected] = useState(null)
   const [done, setDone]         = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
-  function handleConfirm() {
-    onConfirm(os.id, selected)
-    setDone(true)
+  useEffect(() => {
+    api.availablePrisms().then(data => setPrisms(data || []))
+  }, [])
+
+  async function handleConfirm() {
+    if (!selected) return
+    setError('')
+    setLoading(true)
+    try {
+      await api.linkPrism(os.id, selected)
+      setDone(true)
+      onConfirm?.(os.id, selected)
+    } catch (err) {
+      setError(err.message || 'Erro ao vincular prisma')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -63,16 +72,16 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
             {/* Prism list */}
             <div className="px-6 py-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Prismas ativos aguardando vinculação
+                Prismas disponíveis
               </p>
 
-              {mockActivePrisms.length === 0 ? (
+              {prisms.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-400">
-                  Nenhum prisma ativo no momento
+                  Nenhum prisma disponível no momento
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {mockActivePrisms.map(p => (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {prisms.map(p => (
                     <button
                       key={p.prism_code}
                       onClick={() => setSelected(p.prism_code)}
@@ -90,11 +99,17 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-400">
                         <Clock size={12} />
-                        {elapsed(p.waiting_since)}
+                        disponível
                       </div>
                     </button>
                   ))}
                 </div>
+              )}
+
+              {error && (
+                <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {error}
+                </p>
               )}
             </div>
 
@@ -108,11 +123,11 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={!selected}
+                disabled={!selected || loading}
                 className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Link2 size={14} />
-                Confirmar Vínculo
+                {loading ? 'Vinculando…' : 'Confirmar Vínculo'}
               </button>
             </div>
           </>

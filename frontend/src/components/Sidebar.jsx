@@ -8,7 +8,9 @@ import {
   Gauge,
   BarChart2,
   Menu,
+  LogOut,
 } from 'lucide-react'
+import { api } from '../api'
 
 const links = [
   { to: '/',         label: 'Visão Geral',       icon: LayoutDashboard },
@@ -76,9 +78,19 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/20 py-4 px-3">
+      <div className="border-t border-white/20 py-4 px-3 space-y-2">
+        <button
+          onClick={() => api.logout()}
+          title="Sair"
+          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors ${
+            collapsed ? 'justify-center' : 'gap-3'
+          }`}
+        >
+          <LogOut size={18} className="shrink-0" />
+          {!collapsed && 'Sair'}
+        </button>
         {!collapsed && (
-          <p className="text-[11px] text-white/40 whitespace-nowrap">v0.1.0 · Simulação</p>
+          <p className="text-[11px] text-white/40 whitespace-nowrap px-3">v0.1.0 · Simulação</p>
         )}
       </div>
     </aside>

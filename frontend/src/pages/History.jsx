@@ -1,20 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DateFilter from '../components/DateFilter'
-import { mockHistory, STAGE_LABELS } from '../mock/data'
+import { api } from '../api'
 
-function fmtTime(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${date} ${time}`
-}
-
-function fmtDuration(sec) {
-  if (!sec) return '—'
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return m > 0 ? `${m}m ${s}s` : `${s}s`
+const STAGE_LABELS = {
+  waiting:   'Espera',
+  transit:   'Deslocamento',
+  lift_up:   'Inspeção',
+  service:   'Serviço',
+  lift_down: 'Descida',
+  outflow:   'Entrega',
 }
 
 const STAGE_COLORS = {
@@ -26,9 +20,36 @@ const STAGE_COLORS = {
   outflow:   'bg-gray-100 text-gray-700',
 }
 
+function fmtTime(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${dateStr} ${timeStr}`
+}
+
+function fmtDuration(sec) {
+  if (sec == null) return '—'
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function History() {
-  const today = new Date().toISOString().slice(0, 10)
-  const [period, setPeriod] = useState({ start: today, end: today })
+  const [period, setPeriod] = useState({ start: today(), end: today() })
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    api.events(period.start, period.end)
+      .then(data => setEvents(data || []))
+      .finally(() => setLoading(false))
+  }, [period.start, period.end])
 
   return (
     <div className="space-y-6">
@@ -52,27 +73,41 @@ export default function History() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {mockHistory.map((e, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono font-medium text-gray-900">{e.prism_code}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STAGE_COLORS[e.stage]}`}>
-                    {STAGE_LABELS[e.stage]}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-500">
-                  {e.elevator_id ? `Elevador ${e.elevator_id}` : '—'}
-                </td>
-                <td className="px-4 py-3 text-gray-700">{fmtTime(e.entered_at)}</td>
-                <td className="px-4 py-3 text-gray-700">{fmtTime(e.exited_at)}</td>
-                <td className={`px-4 py-3 font-medium ${e.duration_sec === null ? 'text-gray-400' : 'text-gray-900'}`}>
-                  {fmtDuration(e.duration_sec)}
-                  {e.duration_sec === null && (
-                    <span className="ml-2 text-xs text-[#CC0000]">em andamento</span>
-                  )}
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                  Carregando…
                 </td>
               </tr>
-            ))}
+            ) : events.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                  Nenhum evento registrado para o período selecionado
+                </td>
+              </tr>
+            ) : (
+              events.map((e, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono font-medium text-gray-900">{e.prism_code}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STAGE_COLORS[e.stage] ?? 'bg-gray-100 text-gray-700'}`}>
+                      {STAGE_LABELS[e.stage] ?? e.stage}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {e.elevator_id ? `Elevador ${e.elevator_id}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">{fmtTime(e.entered_at)}</td>
+                  <td className="px-4 py-3 text-gray-700">{fmtTime(e.exited_at)}</td>
+                  <td className={`px-4 py-3 font-medium ${e.duration_sec == null ? 'text-gray-400' : 'text-gray-900'}`}>
+                    {fmtDuration(e.duration_sec)}
+                    {e.duration_sec == null && (
+                      <span className="ml-2 text-xs text-[#CC0000]">em andamento</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

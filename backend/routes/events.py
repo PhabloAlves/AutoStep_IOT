@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,6 +18,42 @@ class EventPayload(BaseModel):
     event_type:  str        # "enter" ou "exit"
     timestamp:   datetime
     elevator_id: Optional[int] = None
+
+
+@router.get("")
+def list_events(
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    db: Session = Depends(get_db),
+    _: str = Depends(get_current_user),
+):
+    """Lista todos os eventos de etapa num intervalo de datas (padrão: hoje)."""
+    today = date.today()
+    start = start or today
+    end = end or today
+
+    rows = (
+        db.query(StageEvent, Prism.prism_code)
+        .join(Prism, Prism.id == StageEvent.prism_id)
+        .filter(
+            StageEvent.entered_at >= datetime.combine(start, datetime.min.time()),
+            StageEvent.entered_at <= datetime.combine(end, datetime.max.time()),
+        )
+        .order_by(StageEvent.entered_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "prism_code":   prism_code,
+            "stage":        e.stage,
+            "elevator_id":  e.elevator_id,
+            "entered_at":   e.entered_at.isoformat(),
+            "exited_at":    e.exited_at.isoformat() if e.exited_at else None,
+            "duration_sec": e.duration_sec,
+        }
+        for e, prism_code in rows
+    ]
 
 
 @router.post("/")

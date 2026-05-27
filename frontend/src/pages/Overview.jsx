@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts'
 import StatCard from '../components/StatCard'
 import DateFilter from '../components/DateFilter'
-import { mockDailyMetrics, STAGE_LABELS } from '../mock/data'
+import { api } from '../api'
 
-function fmtMin(sec) {
-  return `${Math.round(sec / 60)} min`
+const STAGE_LABELS = {
+  waiting:   'Espera',
+  transit:   'Deslocamento',
+  lift_up:   'Inspeção',
+  service:   'Serviço',
+  lift_down: 'Descida',
+  outflow:   'Entrega',
 }
 
 const STAGE_COLORS = {
@@ -19,21 +24,39 @@ const STAGE_COLORS = {
   'Entrega':      '#6B7280',
 }
 
-const chartData = mockDailyMetrics.map(m => ({
-  name: STAGE_LABELS[m.stage],
-  minutos: Math.round(m.avg_duration_sec / 60),
-}))
+function fmtMin(sec) {
+  return `${Math.round(sec / 60)} min`
+}
 
 function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
 export default function Overview() {
-  const [period, setPeriod] = useState({ start: today(), end: today() })
+  const [period, setPeriod]         = useState({ start: today(), end: today() })
+  const [metrics, setMetrics]       = useState([])
+  const [bottlenecks, setBottlenecks] = useState([])
+  const [loading, setLoading]       = useState(true)
 
-  const totalVehicles = 1
-  const avgWait = mockDailyMetrics.find(m => m.stage === 'waiting')?.avg_duration_sec ?? 0
-  const avgService = mockDailyMetrics.find(m => m.stage === 'service')?.avg_duration_sec ?? 0
+  useEffect(() => {
+    setLoading(true)
+    Promise.all([
+      api.dailyMetrics(period.start),
+      api.bottlenecks(),
+    ]).then(([m, b]) => {
+      setMetrics(m || [])
+      setBottlenecks(b || [])
+    }).finally(() => setLoading(false))
+  }, [period.start])
+
+  const chartData = metrics.map(m => ({
+    name:    STAGE_LABELS[m.stage] ?? m.stage,
+    minutos: Math.round((m.avg_duration_sec || 0) / 60),
+  }))
+
+  const totalVehicles = metrics.find(m => m.stage === 'waiting')?.count ?? 0
+  const avgWait    = metrics.find(m => m.stage === 'waiting')?.avg_duration_sec ?? 0
+  const avgService = metrics.find(m => m.stage === 'service')?.avg_duration_sec ?? 0
 
   return (
     <div className="space-y-6">
@@ -48,29 +71,39 @@ export default function Overview() {
 
       {/* Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Veículos atendidos"    value={totalVehicles}   unit="hoje"    accent="blue"    />
-        <StatCard title="Tempo médio de espera" value={fmtMin(avgWait)}                note="Lado de fora" accent="amber"   />
-        <StatCard title="Tempo médio de serviço" value={fmtMin(avgService)}            note="No elevador"  accent="emerald" />
-        <StatCard title="Gargalos detectados"   value={2}              unit="etapas"  accent="orange"  />
+        <StatCard title="Veículos atendidos"     value={totalVehicles}           unit="hoje"    accent="blue"    />
+        <StatCard title="Tempo médio de espera"  value={fmtMin(avgWait)}                        note="Lado de fora" accent="amber"   />
+        <StatCard title="Tempo médio de serviço" value={fmtMin(avgService)}                     note="No elevador"  accent="emerald" />
+        <StatCard title="Gargalos detectados"    value={bottlenecks.length}      unit="etapas"  accent="orange"  />
       </div>
 
       {/* Chart */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">Tempo médio por etapa (minutos)</h2>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 32 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 12 }} unit=" min" />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
-            <Tooltip formatter={(v) => [`${v} min`, 'Média']} />
-            <ReferenceLine x={40} stroke="#6366F1" strokeDasharray="4 4" label={{ value: 'Meta', fill: '#6366F1', fontSize: 11 }} />
-            <Bar dataKey="minutos" radius={[0, 4, 4, 0]}>
-              {chartData.map(entry => (
-                <Cell key={entry.name} fill={STAGE_COLORS[entry.name] ?? '#6B7280'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <div className="flex items-center justify-center h-48 text-sm text-gray-400">
+            Carregando…
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-48 text-sm text-gray-400">
+            Nenhum dado para o período selecionado
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 32 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 12 }} unit=" min" />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
+              <Tooltip formatter={(v) => [`${v} min`, 'Média']} />
+              <ReferenceLine x={40} stroke="#6366F1" strokeDasharray="4 4" label={{ value: 'Meta', fill: '#6366F1', fontSize: 11 }} />
+              <Bar dataKey="minutos" radius={[0, 4, 4, 0]}>
+                {chartData.map(entry => (
+                  <Cell key={entry.name} fill={STAGE_COLORS[entry.name] ?? '#6B7280'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   )
