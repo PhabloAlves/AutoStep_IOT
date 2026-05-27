@@ -23,6 +23,8 @@ class ServiceOrder(Base):
     id           = Column(Integer, primary_key=True)
     os_number    = Column(String, unique=True, nullable=False)
     plate        = Column(String, nullable=False)
+    marca        = Column(String)
+    modelo       = Column(String)
     service_type = Column(String)
     mechanic     = Column(String)
     opened_at    = Column(DateTime)

@@ -69,7 +69,7 @@ export default function ServiceOrders() {
         <table className="w-full text-sm">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
-              {['Nº OS', 'Placa', 'Serviço', 'Mecânico', 'Abertura', 'Prisma', ''].map(h => (
+              {['Nº OS', 'Placa', 'Veículo', 'Serviço', 'Mecânico', 'Abertura', 'Prisma', ''].map(h => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   {h}
                 </th>
@@ -79,13 +79,13 @@ export default function ServiceOrders() {
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
                   Carregando…
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
                   Nenhuma OS cadastrada. Clique em "Nova OS" para começar.
                 </td>
               </tr>
@@ -94,6 +94,12 @@ export default function ServiceOrders() {
                 <tr key={os.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono font-medium text-indigo-600">{os.os_number}</td>
                   <td className="px-4 py-3 font-mono text-gray-900">{os.plate}</td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {(os.marca || os.modelo)
+                      ? <span>{[os.marca, os.modelo].filter(Boolean).join(' ')}</span>
+                      : <span className="text-gray-400">—</span>
+                    }
+                  </td>
                   <td className="px-4 py-3 text-gray-700">{os.service_type ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-700">{os.mechanic ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500">{fmtDate(os.opened_at)}</td>

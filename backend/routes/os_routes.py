@@ -22,6 +22,8 @@ PDF_MAGIC = b"%PDF-"
 class CreateOSPayload(BaseModel):
     os_number:    str
     plate:        str
+    marca:        Optional[str] = None
+    modelo:       Optional[str] = None
     service_type: Optional[str] = None
     mechanic:     Optional[str] = None
     opened_at:    Optional[datetime] = None
@@ -56,6 +58,8 @@ def create_os(
     os_obj = ServiceOrder(
         os_number=payload.os_number,
         plate=payload.plate,
+        marca=payload.marca,
+        modelo=payload.modelo,
         service_type=payload.service_type,
         mechanic=payload.mechanic,
         opened_at=payload.opened_at,
@@ -67,6 +71,8 @@ def create_os(
         "id":           os_obj.id,
         "os_number":    os_obj.os_number,
         "plate":        os_obj.plate,
+        "marca":        os_obj.marca,
+        "modelo":       os_obj.modelo,
         "service_type": os_obj.service_type,
         "mechanic":     os_obj.mechanic,
         "opened_at":    os_obj.opened_at.isoformat() if os_obj.opened_at else None,
@@ -107,6 +113,8 @@ def list_orders(db: Session = Depends(get_db), _: str = Depends(get_current_user
             "id":           o.id,
             "os_number":    o.os_number,
             "plate":        o.plate,
+            "marca":        o.marca,
+            "modelo":       o.modelo,
             "service_type": o.service_type,
             "mechanic":     o.mechanic,
             "opened_at":    o.opened_at.isoformat() if o.opened_at else None,

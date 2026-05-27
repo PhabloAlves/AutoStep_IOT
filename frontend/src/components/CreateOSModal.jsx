@@ -9,7 +9,6 @@ const SERVICE_TYPES = [
   'Alinhamento/Balanceamento',
   'Troca de Pneus',
   'Troca de Óleo',
-  'Sistema Elétrico',
   'Outro',
 ]
 
@@ -17,6 +16,8 @@ export default function CreateOSModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
     os_number:    '',
     plate:        '',
+    marca:        '',
+    modelo:       '',
     service_type: '',
     mechanic:     '',
     opened_at:    new Date().toISOString().slice(0, 16), // datetime-local format
@@ -99,6 +100,33 @@ export default function CreateOSModal({ onClose, onCreated }) {
                   value={form.plate}
                   onChange={handleChange}
                   placeholder="ABC-1234"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  Marca
+                </label>
+                <input
+                  name="marca"
+                  value={form.marca}
+                  onChange={handleChange}
+                  placeholder="Ex: Toyota"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  Modelo
+                </label>
+                <input
+                  name="modelo"
+                  value={form.modelo}
+                  onChange={handleChange}
+                  placeholder="Ex: Corolla"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
