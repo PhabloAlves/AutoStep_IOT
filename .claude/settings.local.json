@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(gh auth *)",
-      "PowerShell(gh *)",
-      "Bash(git push *)"
-    ]
-  }
-}
