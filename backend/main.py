@@ -30,13 +30,11 @@ app.add_middleware(
 def _seed_data():
     db = SessionLocal()
     try:
-        # Admin user via env vars
         username = os.getenv("AUTOSTEP_ADMIN_USER", "admin")
         password = os.getenv("AUTOSTEP_ADMIN_PASSWORD")
         if password and not db.query(User).filter_by(username=username).first():
             db.add(User(username=username, password_hash=hash_password(password)))
 
-        # Prisms PRISMA_01..PRISMA_10
         for i in range(1, 11):
             code = f"PRISMA_{i:02d}"
             if not db.query(Prism).filter_by(prism_code=code).first():

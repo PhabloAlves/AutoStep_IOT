@@ -30,7 +30,6 @@ async function apiFetch(path, options = {}) {
 }
 
 export const api = {
-  // ── Auth ──────────────────────────────────────────────────────────────────
   login(username, password) {
     const body = new URLSearchParams({ username, password })
     return fetch(`${BASE}/auth/login`, {
@@ -48,7 +47,6 @@ export const api = {
     window.location.href = '/login'
   },
 
-  // ── Métricas existentes ───────────────────────────────────────────────────
   dailyMetrics(targetDate) {
     const qs = targetDate ? `?target_date=${targetDate}` : ''
     return apiFetch(`/metrics/daily${qs}`)
@@ -62,7 +60,6 @@ export const api = {
     return apiFetch(`/metrics/vehicles/${prismCode}/history`)
   },
 
-  // ── Novos endpoints de análise ────────────────────────────────────────────
   volumeByDay(days = 7) {
     return apiFetch(`/metrics/volume-by-day?days=${days}`)
   },
@@ -84,7 +81,6 @@ export const api = {
     return apiFetch('/metrics/punctuality')
   },
 
-  // ── Eventos ───────────────────────────────────────────────────────────────
   events(start, end) {
     const qs = new URLSearchParams()
     if (start) qs.set('start', start)
@@ -96,7 +92,6 @@ export const api = {
     return apiFetch('/events/', { method: 'POST', body: JSON.stringify(payload) })
   },
 
-  // ── Ordens de Serviço ─────────────────────────────────────────────────────
   listOrders() {
     return apiFetch('/os/')
   },
@@ -112,12 +107,15 @@ export const api = {
     })
   },
 
-  // ── Prismas ───────────────────────────────────────────────────────────────
   availablePrisms() {
     return apiFetch('/prisms/available')
   },
 
   prismStatus(prismCode) {
     return apiFetch(`/prisms/${prismCode}/status`)
+  },
+
+  activeSessions() {
+    return apiFetch('/prisms/active')
   },
 }

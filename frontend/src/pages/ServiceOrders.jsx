@@ -14,8 +14,8 @@ function fmtDate(iso) {
 
 export default function ServiceOrders() {
   const [orders, setOrders]         = useState([])
-  const [linking, setLinking]       = useState(null)  // OS sendo vinculada
-  const [creating, setCreating]     = useState(false) // modal de criação
+  const [linking, setLinking]       = useState(null)
+  const [creating, setCreating]     = useState(false)
   const [loading, setLoading]       = useState(true)
 
   const fetchOrders = useCallback(() => {
@@ -28,7 +28,6 @@ export default function ServiceOrders() {
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
   function handleLinked() {
-    // Atualiza a lista após vincular prisma
     fetchOrders()
   }
 
@@ -48,7 +47,6 @@ export default function ServiceOrders() {
         </button>
       </div>
 
-      {/* Área placeholder para upload PDF futuro */}
       <div
         onClick={() => setCreating(true)}
         className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white py-10 text-center hover:border-indigo-400 transition-colors cursor-pointer"
@@ -64,7 +62,6 @@ export default function ServiceOrders() {
         </p>
       </div>
 
-      {/* OS table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="border-b border-gray-200 bg-gray-50">
@@ -132,7 +129,6 @@ export default function ServiceOrders() {
         </table>
       </div>
 
-      {/* Modais */}
       {creating && (
         <CreateOSModal
           onClose={() => setCreating(false)}

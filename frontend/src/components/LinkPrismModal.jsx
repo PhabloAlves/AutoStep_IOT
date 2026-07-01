@@ -32,7 +32,6 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
 
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div className="flex items-center gap-2">
             <Link2 size={18} className="text-indigo-600" />
@@ -44,7 +43,6 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
         </div>
 
         {done ? (
-          /* Success state */
           <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
             <CheckCircle2 size={48} className="text-green-500" />
             <p className="font-semibold text-gray-900">
@@ -60,7 +58,6 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
           </div>
         ) : (
           <>
-            {/* OS summary */}
             <div className="mx-6 mt-5 rounded-lg bg-gray-50 px-4 py-3">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-sm font-bold text-indigo-600">{os.os_number}</span>
@@ -69,7 +66,6 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
               <p className="mt-0.5 text-xs text-gray-500">{os.service_type} · {os.mechanic}</p>
             </div>
 
-            {/* Prism list */}
             <div className="px-6 py-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Prismas disponíveis
@@ -113,7 +109,6 @@ export default function LinkPrismModal({ os, onClose, onConfirm }) {
               )}
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
               <button
                 onClick={onClose}

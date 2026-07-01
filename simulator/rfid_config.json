@@ -1,0 +1,14 @@
+{
+  "serial": {
+    "port": "COM3",
+    "baud": 115200
+  },
+  "broker": {
+    "host": "localhost",
+    "port": 1883
+  },
+  "elevator_id": 1,
+  "cards": {
+    "a017c454": "PRISMA_01"
+  }
+}

@@ -29,7 +29,6 @@ export default function Sidebar() {
         collapsed ? 'w-16' : 'w-60'
       }`}
     >
-      {/* Brand + Toggle */}
       <div
         className={`flex items-center border-b border-white/20 py-5 ${
           collapsed ? 'justify-center px-3' : 'justify-between px-5'
@@ -53,7 +52,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-2 py-4 space-y-1">
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink
@@ -77,7 +75,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-white/20 py-4 px-3 space-y-2">
         <button
           onClick={() => api.logout()}

@@ -26,7 +26,6 @@ export default function Bottlenecks() {
     }).finally(() => setLoading(false))
   }, [])
 
-  // Mescla métricas diárias com dados históricos dos gargalos
   const chartData = dailyMetrics.map(m => {
     const bn = bottlenecks.find(b => b.stage === m.stage)
     return {
@@ -52,7 +51,6 @@ export default function Bottlenecks() {
           <p className="text-sm font-medium text-green-700">✓ Nenhum gargalo detectado hoje</p>
         </div>
       ) : (
-        /* Alert cards */
         <div className="grid gap-4 sm:grid-cols-2">
           {bottlenecks.map(b => (
             <div
@@ -79,7 +77,6 @@ export default function Bottlenecks() {
         </div>
       )}
 
-      {/* Comparison chart */}
       {chartData.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-gray-700">

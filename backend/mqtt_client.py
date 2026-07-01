@@ -13,6 +13,19 @@ MQTT_PORT     = int(os.environ.get("MQTT_PORT", 1883))
 MQTT_USER     = os.environ.get("MQTT_USER", "")
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "")
 
+STAGE_LABELS_PT = {
+    "waiting":   "Espera",
+    "transit":   "Deslocamento",
+    "lift_up":   "Subida/Inspeção",
+    "service":   "Serviço",
+    "lift_down": "Descida",
+    "outflow":   "Saída",
+}
+EVENT_TYPE_LABELS_PT = {
+    "enter": "ENTRADA",
+    "exit":  "SAÍDA",
+}
+
 
 def _process(payload: dict, event_type: str):
     db = SessionLocal()
@@ -20,7 +33,7 @@ def _process(payload: dict, event_type: str):
         prism_code  = payload["prism_code"]
         stage       = Stage(payload["stage"])
         ts_raw      = datetime.fromisoformat(payload["timestamp"].replace("Z", "+00:00"))
-        timestamp   = ts_raw.replace(tzinfo=None)  # normalizar para naive UTC (consistente com SQLite)
+        timestamp   = ts_raw.replace(tzinfo=None)
         elevator_id = payload.get("elevator_id")
 
         prism = db.query(Prism).filter(Prism.prism_code == prism_code).first()
@@ -31,6 +44,7 @@ def _process(payload: dict, event_type: str):
         if event_type == "enter":
             db.add(StageEvent(
                 prism_id=prism.id,
+                os_id=prism.os_id,
                 elevator_id=elevator_id,
                 stage=stage,
                 entered_at=timestamp,
@@ -56,7 +70,9 @@ def _process(payload: dict, event_type: str):
                 prism.is_active = False
 
         db.commit()
-        print(f"[MQTT] {event_type.upper()} {prism_code}/{stage}")
+        evento = EVENT_TYPE_LABELS_PT.get(event_type, event_type.upper())
+        etapa = STAGE_LABELS_PT.get(stage.value, stage.value)
+        print(f"[MQTT] {evento} {prism_code}/{etapa}")
     except Exception as exc:
         db.rollback()
         print(f"[MQTT] Erro: {exc}")

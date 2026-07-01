@@ -3,16 +3,17 @@ from typing import Optional
 
 
 def _naive(dt: datetime) -> datetime:
-    """Remove timezone info para armazenamento consistente no SQLite (tudo em UTC)."""
     return dt.replace(tzinfo=None) if dt and dt.tzinfo else dt
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.auth import get_current_user
 from backend.database import get_db
 from backend.models import Prism, Stage, StageEvent
+from backend.utils import LOCAL_TZ_MODIFIER, shop_today, to_utc_iso
 
 router = APIRouter()
 
@@ -20,7 +21,7 @@ router = APIRouter()
 class EventPayload(BaseModel):
     prism_code:  str
     stage:       Stage
-    event_type:  str        # "enter" ou "exit"
+    event_type:  str
     timestamp:   datetime
     elevator_id: Optional[int] = None
 
@@ -32,17 +33,18 @@ def list_events(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Lista todos os eventos de etapa num intervalo de datas (padrão: hoje)."""
-    today = date.today()
+    today = shop_today()
     start = start or today
     end = end or today
+
+    local_date = func.date(func.datetime(StageEvent.entered_at, LOCAL_TZ_MODIFIER))
 
     rows = (
         db.query(StageEvent, Prism.prism_code)
         .join(Prism, Prism.id == StageEvent.prism_id)
         .filter(
-            StageEvent.entered_at >= datetime.combine(start, datetime.min.time()),
-            StageEvent.entered_at <= datetime.combine(end, datetime.max.time()),
+            local_date >= start,
+            local_date <= end,
         )
         .order_by(StageEvent.entered_at.desc())
         .all()
@@ -53,8 +55,8 @@ def list_events(
             "prism_code":   prism_code,
             "stage":        e.stage,
             "elevator_id":  e.elevator_id,
-            "entered_at":   e.entered_at.isoformat(),
-            "exited_at":    e.exited_at.isoformat() if e.exited_at else None,
+            "entered_at":   to_utc_iso(e.entered_at),
+            "exited_at":    to_utc_iso(e.exited_at),
             "duration_sec": e.duration_sec,
         }
         for e, prism_code in rows
@@ -76,6 +78,7 @@ def register_event(
     if payload.event_type == "enter":
         db.add(StageEvent(
             prism_id=prism.id,
+            os_id=prism.os_id,
             elevator_id=payload.elevator_id,
             stage=payload.stage,
             entered_at=ts,

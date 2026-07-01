@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api'
+import { playEnterSound, playAdvanceSound, playCompleteSound } from '../sound'
 
 const STAGES = [
   { key: 'waiting',   label: 'Espera',        emoji: '🅿️',  elevador: false },
@@ -38,7 +39,6 @@ export default function Simular() {
   const [done,          setDone]          = useState(false)
   const [reloadKey,     setReloadKey]     = useState(0)
 
-  // Ao trocar o prisma (ou forçar reload), buscar em qual etapa ele está
   useEffect(() => {
     setStatusLoading(true)
     api.prismStatus(prism).then(status => {
@@ -76,13 +76,15 @@ export default function Simular() {
       addLog(label, true)
 
       if (eventType === 'enter') {
+        playEnterSound()
         setInside(true)
       } else {
-        // Saiu — avançar para próxima etapa ou encerrar
         if (stageIdx < STAGES.length - 1) {
+          playAdvanceSound()
           setStageIdx(idx => idx + 1)
           setInside(false)
         } else {
+          playCompleteSound()
           setDone(true)
         }
       }
@@ -95,13 +97,12 @@ export default function Simular() {
 
   function reset() {
     setLog([])
-    setReloadKey(k => k + 1)  // força re-fetch do status do prisma
+    setReloadKey(k => k + 1)
   }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
         <div>
           <h1 className="text-lg font-bold">AutoStep</h1>
@@ -116,7 +117,6 @@ export default function Simular() {
 
       <div className="flex-1 px-4 py-6 space-y-6 max-w-sm mx-auto w-full">
 
-        {/* Seleção de prisma e elevador */}
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="block text-xs font-semibold uppercase tracking-widest text-white/50">
@@ -156,7 +156,6 @@ export default function Simular() {
           </div>
         </div>
 
-        {/* Progress das etapas */}
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-white/50">Progresso</p>
           <div className="flex gap-1">
@@ -177,7 +176,6 @@ export default function Simular() {
         </div>
 
         {done ? (
-          /* Ciclo completo */
           <div className="flex flex-col items-center gap-4 py-8 text-center">
             <span className="text-6xl">🏁</span>
             <p className="text-xl font-bold text-green-400">Ciclo completo!</p>
@@ -190,7 +188,6 @@ export default function Simular() {
             </button>
           </div>
         ) : (
-          /* Controle da etapa atual */
           <div className="space-y-5">
             <div className="rounded-2xl bg-white/5 border border-white/10 p-5 space-y-3">
               <div className="flex items-center justify-between">
@@ -235,7 +232,6 @@ export default function Simular() {
           </div>
         )}
 
-        {/* Log de eventos */}
         {log.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Eventos enviados</p>

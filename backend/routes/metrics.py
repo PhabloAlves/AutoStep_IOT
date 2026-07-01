@@ -8,11 +8,14 @@ from sqlalchemy.orm import Session
 from backend.auth import get_current_user
 from backend.database import get_db
 from backend.models import Prism, ServiceOrder, Stage, StageEvent
+from backend.utils import LOCAL_TZ_MODIFIER, shop_today, to_utc_iso
 
 router = APIRouter()
 
 
-# ── Endpoints existentes ───────────────────────────────────────────────────────
+def _local_date(col):
+    return func.date(func.datetime(col, LOCAL_TZ_MODIFIER))
+
 
 @router.get("/daily")
 def daily_metrics(
@@ -20,7 +23,7 @@ def daily_metrics(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    target_date = target_date or date.today()
+    target_date = target_date or shop_today()
 
     rows = (
         db.query(
@@ -31,7 +34,7 @@ def daily_metrics(
             func.max(StageEvent.duration_sec).label("max_duration_sec"),
         )
         .filter(
-            func.date(StageEvent.entered_at) == target_date,
+            _local_date(StageEvent.entered_at) == target_date,
             StageEvent.exited_at != None,
         )
         .group_by(StageEvent.stage)
@@ -66,7 +69,7 @@ def bottlenecks(
     today_rows = (
         db.query(StageEvent.stage, func.avg(StageEvent.duration_sec).label("avg"))
         .filter(
-            func.date(StageEvent.entered_at) == date.today(),
+            _local_date(StageEvent.entered_at) == shop_today(),
             StageEvent.exited_at != None,
         )
         .group_by(StageEvent.stage)
@@ -109,15 +112,13 @@ def vehicle_history(
         {
             "stage":        e.stage,
             "elevator_id":  e.elevator_id,
-            "entered_at":   e.entered_at.isoformat(),
-            "exited_at":    e.exited_at.isoformat() if e.exited_at else None,
+            "entered_at":   to_utc_iso(e.entered_at),
+            "exited_at":    to_utc_iso(e.exited_at),
             "duration_sec": e.duration_sec,
         }
         for e in events
     ]
 
-
-# ── Novos endpoints de análise ─────────────────────────────────────────────────
 
 @router.get("/volume-by-day")
 def volume_by_day(
@@ -125,24 +126,22 @@ def volume_by_day(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Número de veículos atendidos por dia nos últimos N dias."""
-    start = date.today() - timedelta(days=days - 1)
+    start = shop_today() - timedelta(days=days - 1)
 
     rows = (
         db.query(
-            func.date(StageEvent.entered_at).label("day"),
+            _local_date(StageEvent.entered_at).label("day"),
             func.count(StageEvent.prism_id.distinct()).label("count"),
         )
         .filter(
             StageEvent.stage == Stage.WAITING,
-            func.date(StageEvent.entered_at) >= start,
+            _local_date(StageEvent.entered_at) >= start,
         )
         .group_by("day")
         .order_by("day")
         .all()
     )
 
-    # Preencher dias sem dados com 0
     row_map = {str(r.day): r.count for r in rows}
     result = []
     for i in range(days):
@@ -158,25 +157,21 @@ def service_type_stats(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Tempo médio total e de serviço por tipo de OS."""
-    # Buscar todos os stage_events concluídos com OS vinculada
     rows = (
         db.query(
             ServiceOrder.service_type,
-            StageEvent.prism_id,
+            StageEvent.os_id,
             func.sum(StageEvent.duration_sec).label("total_sec"),
             func.sum(
                 case((StageEvent.stage == Stage.SERVICE, StageEvent.duration_sec), else_=0)
             ).label("service_sec"),
         )
-        .join(Prism, Prism.id == StageEvent.prism_id)
-        .join(ServiceOrder, ServiceOrder.id == Prism.os_id)
+        .join(ServiceOrder, ServiceOrder.id == StageEvent.os_id)
         .filter(StageEvent.exited_at != None, ServiceOrder.service_type != None)
-        .group_by(ServiceOrder.service_type, StageEvent.prism_id)
+        .group_by(ServiceOrder.service_type, StageEvent.os_id)
         .all()
     )
 
-    # Agregar por service_type
     agg: dict = {}
     for r in rows:
         st = r.service_type
@@ -203,17 +198,16 @@ def peak_hours(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Número de entradas de veículos por hora do dia (stage=waiting)."""
-    target_date = target_date or date.today()
+    target_date = target_date or shop_today()
 
     rows = (
         db.query(
-            func.strftime("%H", StageEvent.entered_at).label("hour"),
+            func.strftime("%H", func.datetime(StageEvent.entered_at, LOCAL_TZ_MODIFIER)).label("hour"),
             func.count(StageEvent.id).label("count"),
         )
         .filter(
             StageEvent.stage == Stage.WAITING,
-            func.date(StageEvent.entered_at) == target_date,
+            _local_date(StageEvent.entered_at) == target_date,
         )
         .group_by("hour")
         .all()
@@ -221,7 +215,6 @@ def peak_hours(
 
     hour_map = {r.hour: r.count for r in rows}
 
-    # Exibir faixa 07h-18h, completar com zeros
     return [
         {"hour": f"{h:02d}h", "count": hour_map.get(f"{h:02d}", 0)}
         for h in range(7, 19)
@@ -234,18 +227,17 @@ def outflow_wait(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Tempo médio de espera pós-pronto (stage=outflow) por dia, em minutos."""
-    start = date.today() - timedelta(days=days - 1)
+    start = shop_today() - timedelta(days=days - 1)
 
     rows = (
         db.query(
-            func.date(StageEvent.entered_at).label("day"),
+            _local_date(StageEvent.entered_at).label("day"),
             func.avg(StageEvent.duration_sec).label("avg_sec"),
         )
         .filter(
             StageEvent.stage == Stage.OUTFLOW,
             StageEvent.exited_at != None,
-            func.date(StageEvent.entered_at) >= start,
+            _local_date(StageEvent.entered_at) >= start,
         )
         .group_by("day")
         .order_by("day")
@@ -269,18 +261,12 @@ def punctuality(
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    """Taxa de pontualidade por tipo de serviço.
-
-    On-time = duração do stage 'service' ≤ média histórica para aquele service_type.
-    """
-    # Média histórica de 'service' por service_type
     hist_rows = (
         db.query(
             ServiceOrder.service_type,
             func.avg(StageEvent.duration_sec).label("avg_sec"),
         )
-        .join(Prism, Prism.os_id == ServiceOrder.id)
-        .join(StageEvent, StageEvent.prism_id == Prism.id)
+        .join(StageEvent, StageEvent.os_id == ServiceOrder.id)
         .filter(
             StageEvent.stage == Stage.SERVICE,
             StageEvent.exited_at != None,
@@ -291,14 +277,12 @@ def punctuality(
     )
     hist_avg = {r.service_type: r.avg_sec or 0 for r in hist_rows}
 
-    # Todos os eventos 'service' concluídos com OS vinculada
     detail_rows = (
         db.query(
             ServiceOrder.service_type,
             StageEvent.duration_sec,
         )
-        .join(Prism, Prism.os_id == ServiceOrder.id)
-        .join(StageEvent, StageEvent.prism_id == Prism.id)
+        .join(StageEvent, StageEvent.os_id == ServiceOrder.id)
         .filter(
             StageEvent.stage == Stage.SERVICE,
             StageEvent.exited_at != None,

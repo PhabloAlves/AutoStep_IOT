@@ -24,12 +24,17 @@ const STAGE_COLORS = {
   'Entrega':      '#6B7280',
 }
 
-function fmtMin(sec) {
-  return `${Math.round(sec / 60)} min`
+function fmtDuration(sec) {
+  sec = Math.round(sec || 0)
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return m > 0 ? `${m}min ${s}s` : `${s}s`
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 export default function Overview() {
@@ -50,8 +55,9 @@ export default function Overview() {
   }, [period.start])
 
   const chartData = metrics.map(m => ({
-    name:    STAGE_LABELS[m.stage] ?? m.stage,
-    minutos: Math.round((m.avg_duration_sec || 0) / 60),
+    name:        STAGE_LABELS[m.stage] ?? m.stage,
+    minutos:     Math.round((m.avg_duration_sec || 0) / 60),
+    duration_sec: m.avg_duration_sec || 0,
   }))
 
   const totalVehicles = metrics.find(m => m.stage === 'waiting')?.count ?? 0
@@ -60,7 +66,6 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Visão Geral</h1>
@@ -69,15 +74,13 @@ export default function Overview() {
         <DateFilter value={period} onChange={setPeriod} />
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Veículos atendidos"     value={totalVehicles}           unit="hoje"    accent="blue"    />
-        <StatCard title="Tempo médio de espera"  value={fmtMin(avgWait)}                        note="Lado de fora" accent="amber"   />
-        <StatCard title="Tempo médio de serviço" value={fmtMin(avgService)}                     note="No elevador"  accent="emerald" />
-        <StatCard title="Gargalos detectados"    value={bottlenecks.length}      unit="etapas"  accent="orange"  />
+        <StatCard title="Veículos atendidos"     value={totalVehicles}              unit="hoje"    accent="blue"    />
+        <StatCard title="Tempo médio de espera"  value={fmtDuration(avgWait)}                      note="Lado de fora" accent="amber"   />
+        <StatCard title="Tempo médio de serviço" value={fmtDuration(avgService)}                   note="No elevador"  accent="emerald" />
+        <StatCard title="Gargalos detectados"    value={bottlenecks.length}         unit="etapas"  accent="orange"  />
       </div>
 
-      {/* Chart */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">Tempo médio por etapa (minutos)</h2>
         {loading ? (
@@ -94,7 +97,7 @@ export default function Overview() {
               <CartesianGrid strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 12 }} unit=" min" />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
-              <Tooltip formatter={(v) => [`${v} min`, 'Média']} />
+              <Tooltip formatter={(_, __, props) => [fmtDuration(props.payload.duration_sec), 'Média']} />
               <ReferenceLine x={40} stroke="#6366F1" strokeDasharray="4 4" label={{ value: 'Meta', fill: '#6366F1', fontSize: 11 }} />
               <Bar dataKey="minutos" radius={[0, 4, 4, 0]}>
                 {chartData.map(entry => (

@@ -12,6 +12,12 @@ const SERVICE_TYPES = [
   'Outro',
 ]
 
+function nowForDatetimeLocal() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function CreateOSModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
     os_number:    '',
@@ -20,7 +26,7 @@ export default function CreateOSModal({ onClose, onCreated }) {
     modelo:       '',
     service_type: '',
     mechanic:     '',
-    opened_at:    new Date().toISOString().slice(0, 16), // datetime-local format
+    opened_at:    nowForDatetimeLocal(),
   })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -52,7 +58,6 @@ export default function CreateOSModal({ onClose, onCreated }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
 
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div className="flex items-center gap-2">
             <FilePlus size={18} className="text-indigo-600" />

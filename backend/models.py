@@ -50,11 +50,12 @@ class StageEvent(Base):
 
     id           = Column(Integer, primary_key=True)
     prism_id     = Column(Integer, ForeignKey("prisms.id"), nullable=False)
-    elevator_id  = Column(Integer, nullable=True)   # NULL para waiting e outflow
+    os_id        = Column(Integer, ForeignKey("service_orders.id"), nullable=True)
+    elevator_id  = Column(Integer, nullable=True)
     stage        = Column(SAEnum(Stage), nullable=False)
     entered_at   = Column(DateTime, nullable=False)
     exited_at    = Column(DateTime, nullable=True)
-    duration_sec = Column(Integer, nullable=True)   # calculado no exit
+    duration_sec = Column(Integer, nullable=True)
 
     prism = relationship("Prism", back_populates="stage_events")
 

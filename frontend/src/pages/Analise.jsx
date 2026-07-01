@@ -179,7 +179,6 @@ function OperacoesTab({ peakHours, punctualityStats, outflowWait }) {
 
   return (
     <div className="space-y-6">
-      {/* Stat summary */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <p className="text-xs text-gray-500 mb-1">Horário de pico</p>
@@ -198,7 +197,6 @@ function OperacoesTab({ peakHours, punctualityStats, outflowWait }) {
         </div>
       </div>
 
-      {/* Horário de pico */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">Entradas por Hora do Dia</h2>
         {peakHours.length === 0 ? <EmptyState /> : (
@@ -222,7 +220,6 @@ function OperacoesTab({ peakHours, punctualityStats, outflowWait }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Taxa de pontualidade */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Taxa de Pontualidade por Serviço</h2>
           {punctualityStats.length === 0 ? <EmptyState text="Dados insuficientes" /> : (
@@ -251,7 +248,6 @@ function OperacoesTab({ peakHours, punctualityStats, outflowWait }) {
           )}
         </div>
 
-        {/* Espera pós-pronto */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             Espera Pós-Pronto por Dia (min)

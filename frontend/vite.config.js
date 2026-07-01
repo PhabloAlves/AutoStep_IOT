@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true,   // acessível em 0.0.0.0 — outros dispositivos na mesma rede podem abrir
+    host: true,
     proxy: {
       '/api': {
         target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
